@@ -20,6 +20,7 @@ You you need any features this script is missing - also feel free to contact me.
 
 To Do:
 
- * when a user clicks on the progress bar - go to the corresponding data page
+ * when a user clicks on the progress bar - go to the corresponding data page.
+ * remove old data pages from the top of the web page when too much data is loaded (otherwise the DOM tree would slow the web page down). 
 
 github.com/kuchumovn/web2.scroll
