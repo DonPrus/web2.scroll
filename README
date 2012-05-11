@@ -1,0 +1,21 @@
+Web2.Scroll
+
+Better endless scrolling for web 2.0
+
+Modern "endless scrolling" lacks several features when compared to the good old pagination:
+ * Ability to locate yourself in the whole set of data
+ * Ability to measure our progress while looking through the data
+ * Ability to navigate to arbitrary page
+
+Web2.Scroll innovates a progress bar on the right side of the page.
+It helps user to intuitively understand, where he is right now, how much more he has to scroll, and also he can share GET links to search results with his friends, or bookmark them to resume this "endless scrolling" later, if there is too much data to be scrolled for now.
+
+Tested in latest Chrome and Fire Fox.
+You can view the demo by running "test/test.html".
+Requires jQuery.
+
+This script is highly experimental and I'm open to any kinds of suggestions.
+If you want to use it in your project and you can't make it work — contact me and we'll make it work together.
+You you need any features this script is missing - also feel free to contact me.
+
+github.com/kuchumovn/web2.scroll

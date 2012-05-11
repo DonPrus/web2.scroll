@@ -1,0 +1,354 @@
+﻿<html>
+	<head>
+		<title>Бесконечная прокрутка</title>
+		
+		<meta name="author" content="kuchumovn">
+		
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+		
+		<script src="scroll_watcher.js"></script>
+		
+		<script src="../web2.scroll.js"></script>
+		<link rel="stylesheet" type="text/css" href="../web2.scroll.css"/>
+		
+		<style type="text/less">
+			body
+			{
+				background-image: url('texture.jpg');
+				text-align: center;
+				
+				> *
+				{
+					text-align: left;
+				}
+			}
+			
+			@font-face 
+			{
+				font-family: Amsterdam;
+				src: url('amsterdam.ttf');
+			}
+			
+			ul
+			{
+				display: inline-block;
+			
+				margin-left: 120px;
+				margin-right: 120px;
+				margin-top: 80px;
+			
+				list-style-type: none;
+				
+				line-height: 110px;
+				
+				li
+				{
+					white-space: nowrap;
+				}
+			}
+			
+			ul, .previous_container, .scroll_detector
+			{
+				font-family: Amsterdam;
+				font-size: 70px;
+			}
+			
+			.scroll_detector
+			{
+				color: #7f7f7f;
+				text-align: center;
+				margin-bottom: 100px;
+			}
+			
+			body
+			{
+				margin-top: 100px;
+			
+				.pushkin
+				{
+					text-align: center;
+					
+					> img
+					{
+						display: block;
+						margin-left: auto;
+						margin-right: auto;
+					}
+				}
+			}
+			
+			.previous_container
+			{
+				text-align: center;
+				margin-top: 60px;
+			}
+			
+			.previous
+			{
+				display: none;
+				text-decoration: none;
+				color: #8e5e00;
+			}
+			
+			.loading_previous
+			{
+				color: #7f7f7f;
+				display: none;
+			}
+		</style>
+		
+		<script src="http://lesscss.org/js/less.js"></script>
+
+		<script>
+			var Евгений_Онегин = 
+			[
+				[
+					'Не мысля гордый свет забавить, ',
+					'Вниманье дружбы возлюбя, ',
+					'Хотел бы я тебе представить ',
+					'Залог достойнее тебя, ',
+					'Достойнее души прекрасной, ',
+					'Святой исполненной мечты, ',
+					'Поэзии живой и ясной, ',
+					'Высоких дум и простоты; ',
+					'Но так и быть - рукой пристрастной ',
+					'Прими собранье пестрых глав, ',
+					'Полусмешных, полупечальных, ',
+					'Простонародных, идеальных, ',
+					'Небрежный плод моих забав, ',
+					'Бессониц, легких вдохновений, ',
+					'Незрелых и увядших лет, ',
+					'Ума холодных наблюдений ',
+					'И сердца горестных замет. '
+				],
+
+				[
+					'"Мой дядя самых честных правил, ',
+					'Когда не в шутку занемог, ',
+					'Он уважать себя заставил ',
+					'И лучше выдумать не мог. ',
+					'Его пример другим наука; ',
+					'Но, боже мой, какая скука ',
+					'С больным сидеть и день и ночь, ',
+					'Не отходя ни шагу прочь! ',
+					'Какое низкое коварство ',
+					'Полу-живого забавлять, ',
+					'Ему подушки поправлять, ',
+					'Печально подносить лекарство, ',
+					'Вздыхать и думать про себя: ',
+					'Когда же чорт возьмет тебя!" '
+				],
+				
+				[
+					'Так думал молодой повеса, ',
+					'Летя в пыли на почтовых, ',
+					'Всевышней волею Зевеса ',
+					'Наследник всех своих родных. ',
+					'Друзья Людмилы и Руслана! ',
+					'С героем моего романа ',
+					'Без предисловий, сей же час ',
+					'Позвольте познакомить вас: ',
+					'Онегин, добрый мой приятель, ',
+					'Родился на брегах Невы, ',
+					'Где, может быть, родились вы ',
+					'Или блистали, мой читатель; ',
+					'Там некогда гулял и я: ',
+					'Но вреден север для меня.'
+				]
+			]
+			
+			var сколько_строк_на_странице = 14
+			
+			function параметр(name, url)
+			{
+				if (!url)
+					url = decodeURI(window.location.href)
+		
+				name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]")
+				var regexS = "[\\?&]"+name+"=([^&#]*)"
+				var regex = new RegExp( regexS )
+				var results = regex.exec(url)
+		
+				if (results == null)
+					return null
+		
+				return decodeURIComponent(results[1])
+			}
+			
+			var страница = 1
+			if (параметр('страница'))
+			{
+				страница = параметр('страница')
+			}
+			
+			function адрес()
+			{
+				var адрес = window.location.href
+				
+				var index = адрес.indexOf('?')
+				if (index < 0)
+					return адрес
+					
+				return адрес.substring(0, index)
+			}
+		</script>
+		
+		<script>
+			$(function()
+			{
+				/*
+				 * container — the "<ul></ul>" list (for example)
+				 *
+				 * data — a function returning the content of page No "page".
+				 * A callback is used to allow Ajax data loading.
+				 *
+				 * total — total count of the data items (e.g. total "<li></li>"s in the "<ul></ul>")
+				 *
+				 * page — current page
+				 *
+				 * page_size — number of data items on page (e.g. number of "<li></li>"s on one page)
+				 *
+				 * url — the url of the web page depending on the current data page
+				 *
+				 *     default — first page
+				 *     page — other page ("#{page}" will be replaced with current page number)
+				 *
+				 * render (data, container) — the function called to render a data item inside the container ("<li></li>")
+				 *
+				 * scroll — enables "endless scrolling"
+				 *
+				 *     detector — an element, which triggers loading of the next page, when it appears on the bottom of the screen.
+				 *     it may say "Loading...", etc.
+				 *
+				 *     watcher — a tool object with functions "watch(element)" and "unwatch(element)".
+				 *     it generates events "appears_on_bottom" and "disappears_on_bottom" on the element, 
+				 *     when it appears/disappears (respectively) on the bottom of the screen.
+				 *
+				 *     You may impelement your own scroll watcher. Here I use mine.
+				 *     It is based on MooTools, so it requires including mootools.core.js on your page.
+				 *     Also, as every piece of code, my scroll watcher can have its own bugs.
+				 *     So I give you a choise: either you write your own scroll watcher, or you use mine.
+				 *
+				 * beginning — is called when we hit the first page while navigating backwards (to the previous data pages)
+				 *
+				 * end — is called when we hit the last page while navigating forwards (to the next data pages)
+				 *
+				 * before_page — is called before showing (next or previous) page
+				 * 
+				 * after_page — is called after showing (next or previous) page
+				 * 
+				 * on_previous — is called when the previous page is requested
+				 * 
+				 * on_shown_previous — is called after the previous page is shown
+				 */
+				var web2scroll = new Web2Scroll
+				({
+					container: $('ul'),
+					data: function(page, callback) 
+					{
+						var data = {}
+						
+						var счётчик = страница
+		
+						var строки = Евгений_Онегин[страница - 1]
+						var есть_ли_ещё = typeof Евгений_Онегин[страница] !== 'undefined'
+						
+						// simulate Ajax behaviour
+						setTimeout(function()
+						{
+							callback({ data: строки, has_more: есть_ли_ещё })
+						},
+						1000)
+					},
+					total: Евгений_Онегин.length * сколько_строк_на_странице,
+					page: страница,
+					page_size: сколько_строк_на_странице,
+					url: 
+					{
+						default: адрес(),
+						page: адрес() + '?страница=#{page}'
+					},
+					render: function(data, container)
+					{
+						container.text(data)
+					},
+					scroll:
+					{
+						detector: $('.scroll_detector'),
+						watcher: new Scroll_watcher()
+					},
+					beginning: function() 
+					{ 
+						$(window).scrollTop($(window).scrollTop() - $('.previous_container').outerHeight(true))
+						$('.previous_container').remove() 
+					},
+					end: function() { },
+					before_page: function(type, container)
+					{
+						if (type === 'previous')
+							$('<li/>').html('&nbsp;').prependTo((container))
+					},
+					after_page: function(type, container)
+					{
+						if (type === 'next')
+							$('<li/>').html('&nbsp;').appendTo(container)
+					},
+					on_previous: function()
+					{
+						$('.previous').hide()
+						$('.loading_previous').show()
+					},
+					on_shown_previous: function()
+					{
+						$('.loading_previous').hide()
+						$('.previous').show()
+					}
+				})
+				
+				$('.previous').on('click', function(event)
+				{
+					event.preventDefault()
+					
+					web2scroll.previous_page()
+				})
+				
+				// это хак,
+				// чтобы обозреватель сам не прокручивал вниз при обновлении страницы.
+				// работает через раз, хз как решить
+				$(function()
+				{
+					$(window).scrollTop(0)
+				})
+				
+				// если мы не на первой странице — показать ссылку "Ранее"
+				if (страница > 1)
+				{
+					$('.previous').css('display', 'inline-block')
+				}
+			})
+		</script>
+	</head>
+	
+	<body>
+		<div class="web2scroll vertical_progress_bar">
+			<div class="bar">
+				<div class="progress">
+					<div class="you_are_here"></div>
+				</div>
+			</div>
+		</div>
+
+		<div class="pushkin">
+			<a href="http://en.wikipedia.org/wiki/Alexander_Pushkin"><img title="Alexander Sergeevich Pushkin" src="pushkin.png"/></a>
+		</div>
+		
+		<div class="previous_container">
+			<a href="#" class="previous">Раньше</a>
+			<span class="loading_previous">Ждите...</span>
+		</div>
+		
+		<ul></ul>
+		
+		<div class="scroll_detector">Ждите...</div>
+	</body>
+</html>
